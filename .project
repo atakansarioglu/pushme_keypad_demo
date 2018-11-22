@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <projectDescription>
-	<name>pushme_keypad_demo</name>
+	<name>pushme_freertos_demo_stm32f10x</name>
 	<comment></comment>
 	<projects>
 	</projects>

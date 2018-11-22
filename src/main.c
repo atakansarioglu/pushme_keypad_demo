@@ -1,9 +1,9 @@
 /**
- * @file      main.c
+ * @file      board.c
  * @author    Atakan S.
  * @date      01/01/2018
- * @version   1.3
- * @brief     Keypad project, MCU independent embedded code template.
+ * @version   1.0
+ * @brief     PushME on FreeRTOS demo code.
  *
  * @copyright Copyright (c) 2018 Atakan SARIOGLU ~ www.atakansarioglu.com
  *
@@ -26,35 +26,54 @@
  *  DEALINGS IN THE SOFTWARE.
  */
 
-#include "porty.h"
+// PORTY
+#include <porty.h>
 
-//-- Label definitions (OPTIONAL)
-#define KEY_NONE						0
-#define KEY_ON							(KEY00)
-#define KEY_OFF							(KEY00|KEYLONG)
+// FreeRTOS Kernel includes.
+#include <FreeRTOS.h>
+#include <task.h>
+#include <queue.h>
+#include <timers.h>
 
-// The main routine.
-int main(void){
-	// Init cpu.
+// Definitions
+typedef enum {
+	TOGGLE_LED_Blue_KEY = (KEY00),
+	TOGGLE_LED_Green_KEY = (KEY00 | KEYLONG),
+} tToggleKeys;
+
+// LED Blue Toggle Task.
+static void prvTaskToggleLEDBlue(void * param) {
+	uint32_t keypadValue;
+	while (true) {
+		if (xQueueReceive(keypadQueue, &keypadValue, portMAX_DELAY) && (keypadValue == TOGGLE_LED_Blue_KEY))
+			mPinWrite(LED_Blue, !mPinRead(LED_Blue));
+	}
+}
+
+// LED Blue Toggle Task.
+static void prvTaskToggleLEDGreen(void * param) {
+	while (true) {
+		// Wait on the desired key combination.
+		xEventGroupWaitBits(keypadEventGroup, TOGGLE_LED_Green_KEY, pdTRUE, pdTRUE, portMAX_DELAY);
+		mPinWrite(LED_Green, !mPinRead(LED_Green));
+	}
+}
+
+int main(void) {
+	// Initialize hardware: GPIO, CLOCKS and NVIC.
 	Board_Init();
 
-	// Init Ticker.
-	TickerInit();
+	// Create LED Toggling tasks.
+	xTaskCreate(prvTaskToggleLEDBlue, "LEDBlue", configMINIMAL_STACK_SIZE, NULL, (tskIDLE_PRIORITY + 1), NULL);
+	xTaskCreate(prvTaskToggleLEDGreen, "LEDGreen", configMINIMAL_STACK_SIZE, NULL, (tskIDLE_PRIORITY + 2), NULL);
 
-	// Init the scheduler.
-	PunctualInit();
+	// Create PushME poller task with highest priority.
+	xTaskCreate(keypadRead, "PushME", configMINIMAL_STACK_SIZE, NULL, (tskIDLE_PRIORITY + 3), NULL);
 
-	// Enable global interrupts.
-	mIntEnable();
+	// Start FreeRTOS scheduler.
+	vTaskStartScheduler();
+	while (true);
 
-	// The main loop.
-	while (true) {
-		keypadRead();
-
-		if(isKeyPress(KEY_ON)){// ON
-			mPinWrite(LED_Green, LED_Green_ON);
-		}else if(isKeyPress(KEY_OFF)){// OFF
-			mPinWrite(LED_Green, !mPinRead(LED_Green));
-		}
-	}
+	// Program should not reach here.
+	return 1;
 }

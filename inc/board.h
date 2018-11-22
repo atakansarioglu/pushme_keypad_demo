@@ -30,7 +30,6 @@
 #define _H_BOARD
 
 // IRQ priorities (HIGHEST 0..15 LOWEST).
-#define IRQPRIORITY_TIM4		1
 
 // Pin definitions.
 #define LED_Green				GPIOC,9// Discovery board.

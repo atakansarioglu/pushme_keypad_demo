@@ -30,8 +30,6 @@
 #define _H_PROJECT
     
 // Includes.
-#include "ticker.h"
-#include "punctual.h"
 #include "keypad.h"
 
 #endif
